@@ -1,81 +1,77 @@
-import { Component } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { nanoid } from 'nanoid';
 import ContactForm from '../components/ContactForm/ContactForm';
 import ContactList from '../components/ContactList/ContactList';
 import Filter from '../components/Filter/Filter';
 
-class App extends Component {
-  state = {
-    contacts: [],
-    name: '',
-  };
+const App = () => {
+  const [contacts, setContacts] = useState(() => {
+    const data = JSON.parse(localStorage.getItem('my-contacts'));
+    return data || [];
+  });
+  const [filter, setFilter] = useState('');
 
-  componentDidMount() {
-    const contacts = JSON.parse(localStorage.getItem('my-contacts'));
-    if (contacts?.length) {
-      this.setState({ contacts });
+  const firstRender = useRef(true);
+
+  useEffect(() => {
+    if (!firstRender.current) {
+      localStorage.setItem('my-contacts', JSON.stringify(contacts));
     }
-  }
+  }, [contacts]);
 
-  componentDidUpdate(prevProps, prevState) {
-    const { contacts } = this.state;
-    if (prevState.contacts.length !== contacts.length) {
-      localStorage.setItem('my-contacts', JSON.stringify(this.state.contacts));
-    }
-  }
+  useEffect(() => {
+    firstRender.current = false;
+  }, []);
 
-  isDublicate({ name }) {
-    const { contacts } = this.state;
-    const normalizeName = name.toLowerCase();
+  const isDublicate = ({ name }) => {
+    const normolizedName = name.toLowerCase();
     const dublicate = contacts.find(item => {
-      const normalizedName = item.name.toLowerCase();
-      return normalizeName === normalizedName;
+      const normalizedCurrentName = item.name.toLowerCase();
+      return normalizedCurrentName === normolizedName;
     });
     return Boolean(dublicate);
-  }
-  addContact = data => {
-    if (this.isDublicate(data)) {
-      return alert(`${data.name} is already to contact`);
+  };
+
+  const addContact = useCallback(data => {
+    if (isDublicate(data)) {
+      return alert(` ${data.name} is already in contacts`);
     }
-    this.setState(({ contacts }) => {
+    setContacts(prevContacts => {
       const newContact = { id: nanoid(), ...data };
-      return { contacts: [...contacts, newContact] };
+      return [...prevContacts, newContact];
     });
-  };
-  deleteContact = id => {
-    this.setState(({ contacts }) => {
-      const newContacts = contacts.filter(item => item.id !== id);
-      return { contacts: newContacts };
-    });
-  };
-  changeFilter = ({ target }) => {
-    this.setState({ filter: target.value });
-  };
-  getFilteredContacts() {
-    const { contacts, filter } = this.state;
+  }, []);
+
+  const deleteContact = useCallback(id => {
+    setContacts(prevContacts => prevContacts.filter(item => item.id !== id));
+  }, []);
+
+  const changeFilter = useCallback(({ target }) => {
+    setFilter(target.value);
+  }, []);
+
+  const getFilteredContacts = () => {
     if (!filter) {
       return contacts;
     }
     const normalizedFilter = filter.toLowerCase();
     const filteredContacts = contacts.filter(contacts => {
-      const normalizedName = contacts.name.toLowerCase();
-      return normalizedName.includes(normalizedFilter);
+      const normolizedName = contacts.name.toLowerCase();
+      return normolizedName.includes(normalizedFilter);
     });
     return filteredContacts;
-  }
-  render() {
-    const { addContact, deleteContact, changeFilter } = this;
-    const contacts = this.getFilteredContacts();
-    return (
-      <div>
-        <h1>Phone book</h1>
-        <ContactForm onSubmit={addContact} />
-        <h2>Contacts</h2>
-        <Filter changeFilter={changeFilter} />
-        <ContactList item={contacts} deleteContact={deleteContact} />
-      </div>
-    );
-  }
-}
+  };
+
+  const items = getFilteredContacts();
+  return (
+    <div>
+      <h1>Phonebook</h1>
+      <ContactForm onSubmit={addContact} />
+      <h2>Contacts</h2>
+      <Filter changeFilter={changeFilter} />
+      <ContactList items={items} deleteContact={deleteContact} />
+    </div>
+  );
+};
 
 export default App;

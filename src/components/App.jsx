@@ -14,9 +14,7 @@ const App = () => {
   const firstRender = useRef(true);
 
   useEffect(() => {
-    if (!firstRender.current) {
-      localStorage.setItem('my-contacts', JSON.stringify(contacts));
-    }
+    localStorage.setItem('my-contacts', JSON.stringify(contacts));
   }, [contacts]);
 
   useEffect(() => {
@@ -32,25 +30,23 @@ const App = () => {
     return Boolean(dublicate);
   };
 
-  const addContact =
-    (data => {
-      if (isDublicate(data)) {
-        return alert(` ${data.name} is already in contacts`);
-      }
-      setContacts(prevContacts => {
-        const newContact = { id: nanoid(), ...data };
-        return [...prevContacts, newContact];
-      });
-    },
-    []);
+  const addContact = data => {
+    if (isDublicate(data)) {
+      return alert(` ${data.name} is already in contacts`);
+    }
+    setContacts(prevContacts => {
+      const newContact = { id: nanoid(), ...data };
+      return [...prevContacts, newContact];
+    });
+  };
 
-  const deleteContact = useCallback(id => {
+  const deleteContact = id => {
     setContacts(prevContacts => prevContacts.filter(item => item.id !== id));
-  }, []);
+  };
 
-  const changeFilter = useCallback(({ target }) => {
+  const changeFilter = ({ target }) => {
     setFilter(target.value);
-  }, []);
+  };
 
   const getFilteredContacts = () => {
     if (!filter) {
